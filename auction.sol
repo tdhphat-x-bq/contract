@@ -21,10 +21,10 @@ contract Auction is Code{
     uint limitJoiner = 1;
     uint limitItem = 2;
     uint best = 0;
-    uint idJoiner = 0;
     uint idItem = 0;
     uint bestId = 0;
     uint timeAccess = 0;
+    uint timeStop = 0;
 
     mapping (uint => Auctioner) listJoin;
     mapping (string => uint) checkItem;
@@ -85,11 +85,10 @@ contract Auction is Code{
         limitJoiner = 1;
         limitItem = 2;
         best = 0;
-        idJoiner = 0;
         idItem = 0;
         indexItem = 1;
         timeAccess = 0;
-        
+        timeStop = 0;
     }
 
     function joinAuction(address addressUser,string memory name, uint password) external payable {
@@ -109,6 +108,7 @@ contract Auction is Code{
         number ++; limitJoiner --;
         if(limitJoiner == 0){
             timeAccess = block.timestamp;
+            timeStop = timeAccess;
         }
         sendEther();
         emit joiner(code, addressUser);
@@ -131,33 +131,38 @@ contract Auction is Code{
     // }
 
     function bid (string memory yourChoose, uint yourId) public{
-        if(block.timestamp >= timeAccess + 5 minutes){
+        if(block.timestamp >= timeStop + 5 minutes){
             auctionEnd();
-            //return limitJoiner;
+        }
+        uint money = stringToUint(yourChoose);        
+        if(money == 0){
+            checkJoin[yourId] = 1;
+            delCheckJoin.push(yourId);
         }
         require(listJoin[yourId].indentificationNumber == yourId, "this id is not available");
-        require(block.timestamp >= time[yourId] + 10 seconds || time[yourId] == 0, "this joiner cannot bid yet");
+        require(block.timestamp >= time[yourId] + 10 seconds, "this joiner cannot bid yet");
         require(limitJoiner == 0, "cannot bid yet");
-        if(idJoiner == 1)idJoiner = 0;
-        uint money = stringToUint(yourChoose);
-        if(money == 0){
-            checkJoin[idJoiner] = 1;
-            delCheckJoin.push(idJoiner);
-        }
-        
-        idJoiner ++;
         require(money >= items[idItem].startValue && money > best, "your choose is not available");
-        require(checkJoin[idJoiner] == 0, "skiped cannot bid");
+        require(checkJoin[yourId] == 0, "skiped cannot bid");
         
         bestId = yourId;
         best = money;
         time[yourId] = block.timestamp;
         delTime.push(yourId);
-        if(timeAccess + idItem + 1 minutes <= block.timestamp){
+        if(timeAccess + 1 minutes <= block.timestamp){
             listJoin[bestId].item.push(items[idItem].nameItem); 
+            timeAccess = block.timestamp;
+            bestId = 0;
+            best = 0;
             idItem ++;
+            for(uint i = 0; i < delTime.length; i ++){
+                delete time[delTime[i]];
+            }
+            for(uint i = 0; i < delTime.length; i ++){
+                delete delTime[i];
+            }
         }
     } 
 
 }
-//9863699543627742
+//6371183830765904
