@@ -135,7 +135,7 @@ contract Auction is Code{
             auctionEnd();
             //return limitJoiner;
         }
-        //require(listJoin[yourId].indentificationNumber == yourId, "this id is not available");
+        require(listJoin[yourId].indentificationNumber == yourId, "this id is not available");
         require(block.timestamp >= time[yourId] + 10 seconds || time[yourId] == 0, "this joiner cannot bid yet");
         require(limitJoiner == 0, "cannot bid yet");
         if(idJoiner == 1)idJoiner = 0;
