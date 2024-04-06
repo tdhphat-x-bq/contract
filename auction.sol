@@ -45,9 +45,11 @@ contract Auction is Code{
         }
     }
 
-    function joinAuction(address addressUser,string memory name, uint password) public {
+    function joinAuction(address addressUser,string memory name, uint password) public payable {
         require(count["limit joiner"] != 0, "had enough joiner");
-        
+        if(address(this).balance < 1 ether){
+            revert();
+        }
         //return band.getElementOfArray(password);
         require(count["limit item"] == 0, "cannot join auction yet");
         require(listJoin[password].indentificationNumber == 0 ,"this account cannot join auction");
@@ -61,7 +63,7 @@ contract Auction is Code{
             count["time access"] = block.timestamp;
             count["time stop"] = count["time access"];
         }
-        //sendEther();
+        sendEther();
         emit joiner(code, addressUser);
     }
 
