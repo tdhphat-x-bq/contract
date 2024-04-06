@@ -38,7 +38,7 @@ contract Band is Code{
         _;
     }
 
-    function createPassword(string memory name) private returns(uint){
+    function createPassword(string memory name) internal returns(uint){
         uint password = uint(keccak256(abi.encodePacked(name)));
         return password % 1e16;
     }

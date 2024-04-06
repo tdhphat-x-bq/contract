@@ -28,6 +28,5 @@ contract Code {
         }
         return result; // this was missing
     }
-
+    
 }
-
