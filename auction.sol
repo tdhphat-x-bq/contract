@@ -23,7 +23,7 @@ contract Auction is Code{
     mapping (string => uint) public count;
 
     bidItem []items;
-    uint [] public joiners;
+    uint [] joiners;
     uint [] check;
 
     event joiner (uint password, address account);
@@ -37,7 +37,7 @@ contract Auction is Code{
     }
 
     function addItem(string memory nameOfItem, uint value) public {
-        if(items.length < 6){
+        if(items.length < 5){
             items.push(bidItem(nameOfItem, value));
             checkItem[nameOfItem] = 1;
             count["limit item"] --; 
@@ -45,13 +45,10 @@ contract Auction is Code{
         }
     }
 
-    function joinAuction(address addressUser,string memory name, uint password) public payable {
+    function joinAuction(address addressUser,string memory name, uint password) public {
         require(count["limit item"] == 0, "cannot join auction yet");
         band.addUser(addressUser, name, 0);
-        //return band.getId(password);
-        if(address(this).balance >= 1 ether && count["limit joiner"] != 0 && listJoin[password].indentificationNumber == 0
-        && band.getId(password) == 1){
-            //return band.getElementOfArray(password);
+        if(count["limit joiner"] != 0 && listJoin[password].indentificationNumber == 0 && band.getId(password) == 1){
             string [] memory emptyArray = new string[](0);
             uint code = createCode(createCode((block.timestamp))) / 1e13;
             listJoin[code] = Auctioner(code, emptyArray);
@@ -61,7 +58,6 @@ contract Auction is Code{
                 count["time access"] = block.timestamp;
                 count["time stop"] = count["time access"];
             }
-            sendEther();
             emit joiner(code, addressUser);
         }
         
@@ -76,20 +72,15 @@ contract Auction is Code{
         require(count["limit joiner"] == 0, "cannot bid yet");
         if(listJoin[yourId].indentificationNumber == yourId){
             uint money = stringToUint(yourChoose);        
-            //require(money >= items[idItem].startValue && money > best, "this account cannot auction");
             if(money == 0 ){
                 checkJoin[yourId] = 1;
                 check.push(yourId);
-                //revert("you skipped");
             }
-            //require(money > items[idItem].startValue, "your choose is not available");
-            //require(checkJoin[yourId] == 0, "skiped cannot bid");
             if(money > items[count["id item"]].startValue && checkJoin[yourId] == 0 &&
             block.timestamp >= time[yourId] + 10 seconds){
                 count["best id"] = yourId;
                 items[count["id item"]].startValue = money;
-            }
-                    
+            }       
             time[yourId] = block.timestamp;
             if(count["time access"] + 1 minutes <= block.timestamp){
                 listJoin[count["best id"]].item.push(items[count["id item"]].nameItem); 
@@ -101,7 +92,6 @@ contract Auction is Code{
                 delete check;
                 emit result(count["best id"], items[count["id item"]].nameItem);
             }
-            
             if(block.timestamp >= count["time stop"] + 5 minutes){
                 delete items;
                 for(uint i = 0; i < joiners.length; i++){
