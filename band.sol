@@ -38,13 +38,8 @@ contract Band is Code{
         _;
     }
 
-    function createPassword(string memory name) internal returns(uint){
-        uint password = uint(keccak256(abi.encodePacked(name)));
-        return password % 1e16;
-    }
-
     function addUser(address addressUser,string memory name,uint balance)public {
-        uint password = createPassword(name);
+        uint password = createCode(block.timestamp);
         require(users[password].addr == address(0),"Address already exists");
         checkAdress[addressUser] = 1;
         users[password] = user(addressUser, password, balance, password);

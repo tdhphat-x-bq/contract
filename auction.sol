@@ -56,7 +56,7 @@ contract Auction is Code{
         band.addUser(addressUser, name, 0);
         require(band.getId(password) == 1, "wrong element");
         string [] memory emptyArray = new string[](0);
-        uint code = createCode(createCode((password))) / 1e13;
+        uint code = createCode(createCode((block.timestamp))) / 1e13;
         listJoin[code] = Auctioner(code, emptyArray);
         count["limit joiner"] --;
         if(count["limit joiner"] == 0){
