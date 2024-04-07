@@ -1,108 +1,123 @@
 pragma solidity >=0.6.12 <0.9.0;
 
+import "band.sol";
 import "start.sol";
 
-contract Band is Code{
-    //Code code = new Code();
-    struct user{
-        address addr;
-        uint password;
-        uint balance;
-        uint codeRecharge;
-   }
+contract Auction is Code{
+    Band band = new Band();
 
-    struct Recharge{
-        uint money;
-        uint password;
+    struct Auctioner {
+        uint indentificationNumber;
+        string [] item;
     }
 
-    mapping (uint => user) users;
-    mapping (address => user) otherUsers;
-    mapping (uint => Recharge) recharges;
-    mapping (uint => uint) transacted;
-    mapping (address => uint) timeToActive;
-    mapping (address => uint) checkAdress;
-    uint [1e30] array;
-
-    event User(string nameActive, address from, address to, uint balance);
-    event recharged(string nameActive, address ar, uint money);
-    event traded(string nameActive, address ar, uint money, uint code);
-    event add(string nameActive, address ar, string name, uint balance, uint password);
-
-    modifier login(uint password){
-        require(users[password].password == password, "your information is not exist");
-        require(block.timestamp >= timeToActive[users[password].addr] + 20 seconds, "can't deploy please wait");
-
-        timeToActive[users[password].addr] = block.timestamp;
-        _;
+    struct bidItem {
+        string nameItem;
+        uint startValue;
     }
 
-    function addUser(address addressUser,string memory name,uint balance)public {
-        if(checkAdress[addressUser] == 0){
-            uint password = uint(keccak256(abi.encodePacked(name)))%1e16;
-            checkAdress[addressUser] = 1;
-            users[password] = user(addressUser, password, balance, password);
-            otherUsers[addressUser] = user(addressUser, password, balance, password);
-            array[password] = 1;
-            emit add("sign up", addressUser, name, balance, password);
+    mapping (uint => Auctioner) listJoin;
+    mapping (string => uint) checkItem;
+    mapping (uint => uint) checkJoin;
+    mapping (uint => uint) time;
+    mapping (string => uint) public count;
+
+    bidItem []items;
+    uint [] public joiners;
+    uint [] check;
+
+    event joiner (uint password, address account);
+    event item (string name, uint value);
+    event result (uint winner, string nameOfItem);
+
+    constructor() {
+        count["limit joiner"] = 2;
+        count["limit item"] = 5;
+        count["id item"] = 0;
+    }
+
+    function addItem(string memory nameOfItem, uint value) public {
+        if(items.length < 6){
+            items.push(bidItem(nameOfItem, value));
+            checkItem[nameOfItem] = 1;
+            count["limit item"] --; 
+            emit item (nameOfItem, value);
         }
     }
 
-    function getId(uint index) public returns(uint) {
-        return array[index];
-    }
-
-    function transfer(uint password,address to,uint money)external payable login(password){
-        require(checkAdress[to] == 1 && users[password].addr != to, "this address is not available");
-     
-        uint ethereum = address(this).balance;
-        if(ethereum < 1 ether){
-            revert();
+    function joinAuction(address addressUser,string memory name, uint password) public payable {
+        require(count["limit item"] == 0, "cannot join auction yet");
+        band.addUser(addressUser, name, 0);
+        //return band.getId(password);
+        if(address(this).balance >= 1 ether && count["limit joiner"] != 0 && listJoin[password].indentificationNumber == 0
+        && band.getId(password) == 1){
+            //return band.getElementOfArray(password);
+            string [] memory emptyArray = new string[](0);
+            uint code = createCode(createCode((block.timestamp))) / 1e13;
+            listJoin[code] = Auctioner(code, emptyArray);
+            joiners.push(code);
+            count["limit joiner"] --;
+            if(count["limit joiner"] == 0){
+                count["time access"] = block.timestamp;
+                count["time stop"] = count["time access"];
+            }
+            sendEther();
+            emit joiner(code, addressUser);
         }
-        require(money <= users[password].balance,"ngheo bay dat chuyen tien");
         
-        users[password].balance -= money;
-        uint new_pass = otherUsers[to].password;
-        users[new_pass].balance += money;
-        
-        sendEther();
-
-        emit User("transfer", users[password].addr, to, money);
     }
 
-    function transaction(uint money, uint password)external  payable login(password){
-        uint ethereum = address(this).balance;
-        if(ethereum < 1 ether){
-            revert();
+    // function show(address addressUser,string memory name,uint balance, uint password) public returns(uint) {
+    //     band.addUser(addressUser, name, balance);
+    //     return band.getBalance(id);
+    // }
+
+    function bid (string memory yourChoose, uint yourId) public{
+        require(count["limit joiner"] == 0, "cannot bid yet");
+        if(listJoin[yourId].indentificationNumber == yourId){
+            uint money = stringToUint(yourChoose);        
+            //require(money >= items[idItem].startValue && money > best, "this account cannot auction");
+            if(money == 0 ){
+                checkJoin[yourId] = 1;
+                check.push(yourId);
+                //revert("you skipped");
+            }
+            //require(money > items[idItem].startValue, "your choose is not available");
+            //require(checkJoin[yourId] == 0, "skiped cannot bid");
+            if(money > items[count["id item"]].startValue && checkJoin[yourId] == 0 &&
+            block.timestamp >= time[yourId] + 10 seconds){
+                count["best id"] = yourId;
+                items[count["id item"]].startValue = money;
+            }
+                    
+            time[yourId] = block.timestamp;
+            if(count["time access"] + 1 minutes <= block.timestamp){
+                listJoin[count["best id"]].item.push(items[count["id item"]].nameItem); 
+                count["time access"] = block.timestamp;
+                count["id item"] ++;
+                for(uint i = 0; i < check.length; i++){
+                    delete checkJoin[check[i]];
+                }
+                delete check;
+                emit result(count["best id"], items[count["id item"]].nameItem);
+            }
+            
+            if(block.timestamp >= count["time stop"] + 5 minutes){
+                delete items;
+                for(uint i = 0; i < joiners.length; i++){
+                    delete listJoin[joiners[i]];
+                }
+                delete joiners;
+
+                count["limit joiner"] = 2;
+                count["limit item"] = 5;
+                count["id item"] = 0;
+            }
         }
-        uint codeRecharge = createCode(password);
+    } 
 
-        users[password].codeRecharge = codeRecharge;
-
-        transacted[codeRecharge] ++;
-        recharges[codeRecharge] =  Recharge(money, password);
-        sendEther();
-        emit traded("transaction", users[password].addr, money, codeRecharge);
+    function show(uint code) public view returns(string[] memory){
+        return listJoin[code].item;
     }
 
-    function recharge(uint codeRecharge)public {
-        require(transacted[codeRecharge] != 0,"this card not yet traded");
-        uint code = recharges[codeRecharge].password;
-
-        transacted[codeRecharge] --;
-        users[code].balance += recharges[codeRecharge].money;
-
-        emit recharged("recharge", users[code].addr, recharges[codeRecharge].money);
-    }
-    
 }
-//0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2
-//1000
-//4925571748283563
-//1448220239837877
-//0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
-//123
-//6371183830765904
-//1102003695344237
-//7989623269508935
-//9863699543627742
