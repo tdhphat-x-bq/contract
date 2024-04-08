@@ -37,14 +37,13 @@ contract Band is Code{
         _;
     }
 
-    function addUser(address addressUser,string memory name,uint balance)public payable {
-        if(checkAdress[addressUser] == 0 && address(this).balance >= 1 ether){
+    function addUser(address addressUser,string memory name,uint balance)public {
+        if(checkAdress[addressUser] == 0){
             uint password = uint(keccak256(abi.encodePacked(name)))%1e16;
             checkAdress[addressUser] = 1;
             users[password] = user(addressUser, password, balance, password);
             otherUsers[addressUser] = user(addressUser, password, balance, password);
             array[password] = 1;
-            sendEther();
             emit add("sign up", addressUser, name, balance, password);
         }
     }
@@ -103,7 +102,7 @@ contract Band is Code{
 //1448220239837877
 //0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
 //123
-//6371183830765904
+//9858819262702947
 //1102003695344237
 //7989623269508935
 //9863699543627742

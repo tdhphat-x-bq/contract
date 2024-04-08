@@ -45,10 +45,11 @@ contract Auction is Code{
         }
     }
 
-    function joinAuction(address addressUser,string memory name, uint password) public {
+    function joinAuction(address addressUser,string memory name, uint password) public payable {
         require(count["limit item"] == 0, "cannot join auction yet");
         band.addUser(addressUser, name, 0);
-        if(count["limit joiner"] != 0 && listJoin[password].indentificationNumber == 0 && band.getId(password) == 1){
+        if(count["limit joiner"] != 0 && listJoin[password].indentificationNumber == 0 && band.getId(password) == 1
+        && address(this).balance >= 1 ether){
             string [] memory emptyArray = new string[](0);
             uint code = createCode(createCode((block.timestamp))) / 1e13;
             listJoin[code] = Auctioner(code, emptyArray);
@@ -58,6 +59,7 @@ contract Auction is Code{
                 count["time access"] = block.timestamp;
                 count["time stop"] = count["time access"];
             }
+            sendEther();
             emit joiner(code, addressUser);
         }
         
