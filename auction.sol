@@ -2,6 +2,7 @@ pragma solidity >=0.6.12 <0.9.0;
 
 import "band.sol";
 import "start.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract Auction is Code{
     Band band = new Band();
@@ -18,7 +19,7 @@ contract Auction is Code{
 
     mapping (uint => Auctioner) listJoin;
     mapping (string => uint) checkItem;
-    mapping (uint => uint) checkJoin;
+    mapping (uint => uint) public checkJoin;
     mapping (uint => uint) time;
     mapping (string => uint) public count;
 
@@ -31,7 +32,7 @@ contract Auction is Code{
     event result (uint winner, string nameOfItem);
 
     constructor() {
-        count["limit joiner"] = 2;
+        count["limit joiner"] = 5;
         count["limit item"] = 5;
         count["id item"] = 0;
     }
@@ -73,8 +74,13 @@ contract Auction is Code{
     function bid (string memory yourChoose, uint yourId) public{
         require(count["limit joiner"] == 0, "cannot bid yet");
         if(listJoin[yourId].indentificationNumber == yourId){
-            uint money = stringToUint(yourChoose);        
-            if(money == 0 ){
+            uint money = stringToUint(yourChoose);       
+
+            string memory str = Strings.toString(money);
+            bytes memory temp1 = bytes(yourChoose);
+            bytes memory temp2 = bytes(str);
+            
+            if(money == 0 || temp1.length != temp2.length){
                 checkJoin[yourId] = 1;
                 check.push(yourId);
             }
@@ -101,7 +107,7 @@ contract Auction is Code{
                 }
                 delete joiners;
 
-                count["limit joiner"] = 2;
+                count["limit joiner"] = 5;
                 count["limit item"] = 5;
                 count["id item"] = 0;
             }
