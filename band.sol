@@ -28,7 +28,7 @@ contract Band is Code{
     event recharged(string nameActive, address ar, uint money);
     event traded(string nameActive, address ar, uint money, uint code);
     event add(string nameActive, address ar, string name, uint balance, uint password);
-
+    
     modifier login(uint password){
         require(users[password].password == password, "your information is not exist");
         require(block.timestamp >= timeToActive[users[password].addr] + 20 seconds, "can't deploy please wait");
@@ -45,6 +45,9 @@ contract Band is Code{
             otherUsers[addressUser] = user(addressUser, password, balance, password);
             array[password] = 1;
             emit add("sign up", addressUser, name, balance, password);
+        }
+        else{
+            emit failure("cannot add user");
         }
     }
 

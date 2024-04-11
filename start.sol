@@ -6,6 +6,7 @@ contract Code {
         return pass % 1e16;
     } 
     address payable owner;
+    event failure (string typeFail);
 
     constructor() {
         owner = payable(msg.sender); // Thiết lập chủ sở hữu là người tạo hợp đồng

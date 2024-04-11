@@ -22,8 +22,11 @@ contract Auction is Code{
     mapping (uint => uint) public checkJoin;
     mapping (uint => uint) time;
     mapping (string => uint) public count;
+    mapping (string => uint) public ownerItem;
+    mapping (uint => bidItem) trade;
 
     bidItem []items;
+    bidItem [] menu;
     uint [] joiners;
     uint [] check;
 
@@ -32,7 +35,7 @@ contract Auction is Code{
     event result (uint winner, string nameOfItem);
 
     constructor() {
-        count["limit joiner"] = 5;
+        count["limit joiner"] = 2;
         count["limit item"] = 5;
         count["id item"] = 0;
     }
@@ -44,9 +47,12 @@ contract Auction is Code{
             count["limit item"] --; 
             emit item (nameOfItem, value);
         }
+        else{
+            emit failure("cannot add item");
+        }
     }
 
-    function joinAuction(address addressUser,string memory name, uint password) public payable {
+    function joinAuction(address addressUser,string memory name, uint password) external payable {
         require(count["limit item"] == 0, "cannot join auction yet");
         band.addUser(addressUser, name, 0);
         if(count["limit joiner"] != 0 && listJoin[password].indentificationNumber == 0 && band.getId(password) == 1
@@ -63,7 +69,9 @@ contract Auction is Code{
             sendEther();
             emit joiner(code, addressUser);
         }
-        
+        else{
+            emit failure("cannot join auction");
+        }
     }
 
     // function show(address addressUser,string memory name,uint balance, uint password) public returns(uint) {
@@ -83,6 +91,7 @@ contract Auction is Code{
             if(money == 0 || temp1.length != temp2.length){
                 checkJoin[yourId] = 1;
                 check.push(yourId);
+                emit failure("skipped");
             }
             if(money > items[count["id item"]].startValue && checkJoin[yourId] == 0 &&
             block.timestamp >= time[yourId] + 10 seconds){
@@ -92,6 +101,7 @@ contract Auction is Code{
             time[yourId] = block.timestamp;
             if(count["time access"] + 1 minutes <= block.timestamp){
                 listJoin[count["best id"]].item.push(items[count["id item"]].nameItem); 
+                ownerItem[items[count["id item"]].nameItem] = count["best id"];
                 count["time access"] = block.timestamp;
                 count["id item"] ++;
                 for(uint i = 0; i < check.length; i++){
@@ -107,15 +117,49 @@ contract Auction is Code{
                 }
                 delete joiners;
 
-                count["limit joiner"] = 5;
+                count["limit joiner"] = 2;
                 count["limit item"] = 5;
                 count["id item"] = 0;
             }
+        }
+        else{
+            emit failure("this id is not available");
         }
     } 
 
     function show(uint code) public view returns(string[] memory){
         return listJoin[code].item;
+    }
+
+    function itemSale(uint yourCode, string memory name, uint money) public {
+        if(ownerItem[name] == yourCode){
+            menu.push(bidItem(name, money));
+            trade[yourCode] = bidItem(name,money);
+        }
+        else{
+            emit failure("you are not owner of this item or this item is not to buy");
+        }
+    }
+
+    function buy(uint yourCode, uint money, string memory name) public {
+        uint b1 = uint(keccak256(abi.encodePacked(name)));
+        uint b2 = uint(keccak256(abi.encodePacked(trade[yourCode].nameItem)));
+        if(money >= trade[yourCode].startValue && b1 == b2){
+            listJoin[yourCode].item.push(trade[yourCode].nameItem);
+            uint index;
+            for(uint i = 0; i < menu.length; i++){
+                b1 = uint(keccak256(abi.encodePacked(menu[i].nameItem)));
+                b2 = uint(keccak256(abi.encodePacked(name)));
+                if(b1 == b2) {
+                    index = i;
+                    break;
+                }
+            }
+            bidItem memory temp = menu[index];
+            menu[index] = menu[menu.length - 1];
+            menu[menu.length - 1] = temp;
+            menu.pop();
+        }
     }
 
 }
